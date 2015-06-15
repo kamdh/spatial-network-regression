@@ -298,26 +298,42 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   while(iter < maxiter) {
     setulb(&n, &m, x, l, u, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
            &iprint, csave, lsave, isave, dsave);
-    if ( IS_FG(*task) ) {
+    if (IS_FG(*task)) {
       // update cost and gradient (in-place)
       copy_vec_2_mat(x,W);
       f=cost(W,X,Y,Lx,Ly,lambda);
       gmat=gradient(W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
       copy_mat_2_vec(gmat,g);
-    } else if ( *task==NEW_X ) {
+    } else if (*task==NEW_X) {
       // new iterate
       iter++;
-    } else {
-      // could be error or something, but just exit
+    } else if (*task==ABNORMAL) {
+      cout << "WARNING: ABNORMAL_TERMINATION_IN_LNSRCH" << endl;
+    } else if (*task==RESTART) {
+      cout << "WARNING: ABNORMAL_TERMINATION_IN_LNSRCH" << endl;
+    } else if (IS_WARNING(*task)) {
+      cout << "WARNING: " << *task << endl;
+    } else if (IS_ERROR(*task)) { 
+      cout << "ERROR: " << *task << endl;
+    } else if (IS_STOP(*task)) {
+      cout << "STOP: " << *task << endl;
       break;
+    } else if (IS_CONVERGED(*task)) {
+      cout << "CONVERGED!" << endl;
+      break;
+    } else {
+      cout << "Unknown status, task=" << *task << endl;
     }
   }
-  if (iter == maxiter)
-    cout << "Maximum number of iterations reached" << endl;
   copy_vec_2_mat(x,W);
-
   // free arrays
   free(x); free(g); free(u); free(l); free(nbd); free(wa); free(iwa);
-  return(0);
+
+  if (iter == maxiter) {
+    cout << "Maximum number of iterations reached" << endl;
+    return(2);
+  } else {
+    return(0);
+  }
 }
 
