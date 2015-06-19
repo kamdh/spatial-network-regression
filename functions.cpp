@@ -1,14 +1,23 @@
 #include "functions.hpp"
 
+
+double loss(mat W, mat X, mat Y) {
+  /* || Y - W*X ||_F^2  */
+  return pow(norm(Y-W*X,"fro"),2);
+}
+
+double regularizer(mat W, sp_mat Lx, sp_mat Ly) {
+  /* || W*Lx' + Ly*W ||_F^2 */
+  return pow(norm(W*Lx.t() + Ly*W,"fro"),2);
+}
+
 double cost(mat W, mat X, mat Y,
             sp_mat Lx, sp_mat Ly, double lambda) {
   /* Returns the cost of the current parameters */
   double cost1, cost2;
-  /* || Y - W*X ||_F^2  */
-  cost1 = pow(norm(Y-W*X,"fro"),2);
-  /* || W*Lx' + Ly*W ||_F^2 */
-  cost2 = pow(norm(W*Lx.t() + Ly*W,"fro"),2);
-  return cost1+lambda*cost2;
+  cost1 = loss(W,X,Y);
+  cost2 = regularizer(W,Lx,Ly);
+  return cost1+lambda*lambda*cost2;
 }
 
 mat gradient(mat W, sp_mat Lx, sp_mat Ly, double lambda,

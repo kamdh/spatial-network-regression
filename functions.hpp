@@ -17,6 +17,8 @@ using namespace std;
 using namespace arma;
 
 
+double loss(mat W, mat X, mat Y);
+double regularizer(mat W, sp_mat Lx, sp_mat Ly);
 double cost(mat W, mat X, mat Y, sp_mat Lx, sp_mat Ly, double lambda);
 mat gradient(mat W, sp_mat Lx, sp_mat Ly, double lambda,
              mat YXT, mat XXT, sp_mat LxLxT, sp_mat LyLyT);
