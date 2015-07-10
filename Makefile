@@ -22,6 +22,7 @@ default:
 	$(CC) -o solve $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
 
 test:
+	$(CC) -o save_test -I $(INCLUDES) save_test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
 	$(CC) -o test -I $(INCLUDES) test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
 
 profile:

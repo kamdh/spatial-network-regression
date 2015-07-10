@@ -1,6 +1,7 @@
 #include "functions.hpp"
 
 
+
 double loss(mat W, mat X, mat Y) {
   /* || Y - W*X ||_F^2  */
   return pow(norm(Y-W*X,"fro"),2);
@@ -17,7 +18,7 @@ double cost(mat W, mat X, mat Y,
   double cost1, cost2;
   cost1 = loss(W,X,Y);
   cost2 = regularizer(W,Lx,Ly);
-  return cost1+lambda*lambda*cost2;
+  return cost1+lambda*cost2;
 }
 
 mat gradient(mat W, sp_mat Lx, sp_mat Ly, double lambda,
@@ -231,6 +232,8 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
     printf("lambda should be > 0\n");
     return(1);
   }
+  // Scale lambda
+  lambda=lambda*double(ninj)/double(nx);
 
   // Do a few computations to setup matrix products for gradient
   mat YXT,XXT;
