@@ -1,7 +1,7 @@
 #include "functions.hpp"
-#include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <csignal>
 
 const string usage=
   "Usage: solve [W0] X Y Lx Ly lambda W\n\n"
@@ -9,6 +9,13 @@ const string usage=
   "  min_W>0 ||W*X-Y||^2 + lambda*(ninj/nx)*||W*Lx + Ly*W||^2\n\n"
   "By default, use initial guess W0=Y*X^T*pinv(X*X^T) "
   "for iterative solver.\n\n";
+
+volatile sig_atomic_t checkpoint=0;
+
+void catch_signal(int sig) {
+  // This variable indicates that we need to run a checkpoint
+  checkpoint=1;
+}
 
 int main(int argc, char** argv) {
   char *W_fn, *X_fn, *Y_fn, *Lx_fn, *Ly_fn, *outputfile;
@@ -54,41 +61,40 @@ int main(int argc, char** argv) {
   printf("Reading Ly\n");
   sp_mat Ly=arma_sp_mat_mmread(Ly_fn);
   // Initialize W iterate
+  printf("Initializing W0... ");
   if (argc==8) {
-    printf("Reading W0\n");
     W=arma_mat_mmread(W_fn);
+    printf("successfully read W0.\n");
   } else if (argc==7) {
-    printf("Performing pseudinverse initialization... ");
-    //W=Y*X.t()*pinv(X*X.t());
-    double tol;
-    mat U,V,pinvXXt;
-    vec s,sthresh,s2inv;
-    if (!svd_econ(U,s,V,X,"left")) {
-        cout << "svd failed in W0 initialization" << endl;
-        return(1);
+    // First try and load any (possible) checkpoint
+    if (init_checkpoint(W, outputfile)) {
+      // Checkpoint loading failed, initialize from start
+      printf("performing pseudinverse initialization... ");
+      init_W(W,X,Y);
+      printf("done.\n");
+    } else {
+      printf("successfully loaded checkpoint.\n");
     }
-    tol=U.n_rows*max(s)*datum::eps;
-    sthresh=s(s > tol);
-    s2inv=1/(sthresh%sthresh);
-    pinvXXt=U*diagmat(s2inv)*U.t();
-    W=Y*X.t()*pinvXXt;
-    printf("done.\n");
   }
+
+  // register signal handler for checkpointing
+  signal(SIGTERM,catch_signal);
+  signal(SIGINT,catch_signal);
   
   int code=minimize_func(W,X,Y,Lx,Ly,lambda,800,1e10,1e-5);
   // while (code==2) {
   //   cout << "minimize_func returned 2, restarting" << endl;
   //   code=minimize_func(W,X,Y,Lx,Ly,lambda,300,1e10,1e-5);
   // }
-  if (code==2) {
+  if (code != 0) {
     cout << "Solver did not converge for call:" << endl;
     for (int n=0; n<argc; n++)
       cout << argv[n] << " ";
     cout << endl;
   }
-
+  
   if (arma_mat_mmwrite(outputfile,W))
     return(1);
-
+  
   return(0);
 }

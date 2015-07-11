@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <csignal>
 
 extern "C" 
 {
@@ -16,22 +17,27 @@ extern "C"
 using namespace std;
 using namespace arma;
 
+extern volatile sig_atomic_t checkpoint;
 
-double loss(mat W, mat X, mat Y);
-double regularizer(mat W, sp_mat Lx, sp_mat Ly);
-double cost(mat W, mat X, mat Y, sp_mat Lx, sp_mat Ly, double lambda);
-mat gradient(mat W, sp_mat Lx, sp_mat Ly, double lambda,
-             mat YXT, mat XXT, sp_mat LxLxT, sp_mat LyLyT);
+int init_W(mat &W, const mat &X, const mat &Y);
+int init_checkpoint(mat &W, char *fn);
+double loss(const mat &W, const mat &X, const mat &Y);
+double regularizer(const mat &W, const sp_mat &Lx, const sp_mat &Ly);
+double cost(const mat &W, const mat &X, const mat &Y, 
+            const sp_mat &Lx, const sp_mat &Ly, double lambda);
+void gradient(mat &g,
+              const mat &W, const sp_mat &Lx, const sp_mat &Ly, double lambda,
+              const mat &YXT, const mat &XXT, const sp_mat &LxLxT, 
+              const sp_mat &LyLyT);
 void copy_vec_2_mat(double *v, mat &A);
-void copy_mat_2_vec(mat A, double *v);
+void copy_mat_2_vec(const mat &A, double *v);
 sp_mat arma_sp_mat_mmread(char *fn);
 mat arma_mat_mmread(char *fn);
-int arma_mat_mmwrite(char *fn, mat M);
+int arma_mat_mmwrite(char *fn, const mat &M);
 int test_problem(void);
 int test_copy(void);
 int minimize_func(mat &W, const mat &X, const mat &Y, 
                   const sp_mat &Lx, const sp_mat &Ly, double lambda,
                   int maxiter=200, double factr=1e7, double pgtol=1e-5);
-
 
 #endif

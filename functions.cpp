@@ -1,19 +1,46 @@
 #include "functions.hpp"
 
+int init_W(mat &W, const mat &X, const mat &Y) {
+  //W=Y*X.t()*pinv(X*X.t());
+  double tol;
+  mat U,V,pinvXXt;
+  vec s,sthresh,s2inv;
+  if (!svd_econ(U,s,V,X,"left")) {
+    cout << "SVD failed in W0 initialization" << endl;
+    return(1);
+  }
+  tol=U.n_rows*max(s)*datum::eps;
+  sthresh=s(s > tol);
+  s2inv=1/(sthresh%sthresh);
+  pinvXXt=U*diagmat(s2inv)*U.t();
+  W=Y*X.t()*pinvXXt;
+  return(0);
+}
 
+int init_checkpoint(mat &W, char *fn) {
+  FILE* fptr = fopen(fn, "r");
+  if (fptr != NULL) {
+    fclose(fptr);
+    // actually load it now
+    W=arma_mat_mmread(fn);
+    return(0);
+  } else {
+    return(1);
+  }
+}
 
-double loss(mat W, mat X, mat Y) {
+double loss(const mat &W, const mat &X, const mat &Y) {
   /* || Y - W*X ||_F^2  */
   return pow(norm(Y-W*X,"fro"),2);
 }
 
-double regularizer(mat W, sp_mat Lx, sp_mat Ly) {
+double regularizer(const mat &W, const sp_mat &Lx, const sp_mat &Ly) {
   /* || W*Lx' + Ly*W ||_F^2 */
   return pow(norm(W*Lx.t() + Ly*W,"fro"),2);
 }
 
-double cost(mat W, mat X, mat Y,
-            sp_mat Lx, sp_mat Ly, double lambda) {
+double cost(const mat &W, const mat &X, const mat &Y,
+            const sp_mat &Lx, const sp_mat &Ly, double lambda) {
   /* Returns the cost of the current parameters */
   double cost1, cost2;
   cost1 = loss(W,X,Y);
@@ -21,11 +48,12 @@ double cost(mat W, mat X, mat Y,
   return cost1+lambda*cost2;
 }
 
-mat gradient(mat W, sp_mat Lx, sp_mat Ly, double lambda,
-             mat YXT, mat XXT, 
-             sp_mat LxLxT, sp_mat LyLyT) {
+void gradient(mat &g,
+              const mat &W, const sp_mat &Lx, const sp_mat &Ly, double lambda,
+              const mat &YXT, const mat &XXT, 
+              const sp_mat &LxLxT, const sp_mat &LyLyT) {
   /* Computes the gradient g, which is modified in-place */
-  return -2*YXT + 2*W*XXT + 2*lambda*(2*Ly*W*Lx + W*LxLxT + LyLyT*W);
+  g=-2*YXT + 2*W*XXT + 2*lambda*(2*Ly*W*Lx + W*LxLxT + LyLyT*W);
 }
 
 void copy_vec_2_mat(double *v, mat &A) {
@@ -39,7 +67,7 @@ void copy_vec_2_mat(double *v, mat &A) {
   }
 }
 
-void copy_mat_2_vec(mat A, double *v) {
+void copy_mat_2_vec(mat &A, double *v) {
   long m=(long) A.n_rows;
   long n=(long) A.n_cols;
   long i,j;
@@ -174,7 +202,7 @@ mat arma_mat_mmread(char *fn) {
     return M;
 }
 
-int arma_mat_mmwrite(char *fn, mat M) {
+int arma_mat_mmwrite(char *fn, const mat &M) {
   /*
     save an arma mat in matrix market format
     
@@ -244,10 +272,10 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   LyLyT=Ly*Ly.t();
   // Initial test
   double f;
-  mat gmat;
+  mat gmat(ny,nx);
   f=cost(W,X,Y,Lx,Ly,lambda);
   cout << "initial cost: " << f << endl;
-  gmat=gradient(W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
+  gradient(gmat,W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
   cout << "initial gradient norm: " << norm(gmat,"fro") << endl;
   
   // Run L-BFGS-B optimization
@@ -307,14 +335,14 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   /*     We start the iteration by initializing task. */
   *task = (integer)START;
   int iter=0;
-  while(iter < maxiter) {
+  while ((iter < maxiter) && !checkpoint) {
     setulb(&n, &m, x, l, u, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
            &iprint, csave, lsave, isave, dsave);
     if (IS_FG(*task)) {
-      // update cost and gradient (in-place)
+      // update cost and gradient
       copy_vec_2_mat(x,W);
       f=cost(W,X,Y,Lx,Ly,lambda);
-      gmat=gradient(W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
+      gradient(gmat,W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
       copy_mat_2_vec(gmat,g);
     } else if (*task==NEW_X) {
       // new iterate
@@ -344,6 +372,9 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   if (iter == maxiter) {
     cout << "Maximum number of iterations reached" << endl;
     return(2);
+  } else if (checkpoint) {
+    cout << "Caught termination signal, checkpointing then exiting" << endl;
+    return(1);
   } else {
     return(0);
   }
