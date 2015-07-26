@@ -1,6 +1,6 @@
 #include "functions.hpp"
 
-int init_W(mat &W, const mat &X, const mat &Y) {
+int init_pinv(mat &W, const mat &X, const mat &Y) {
   //W=Y*X.t()*pinv(X*X.t());
   double tol;
   mat U,V,pinvXXt;
@@ -22,9 +22,12 @@ int init_checkpoint(mat &W, char *fn) {
   if (fptr != NULL) {
     fclose(fptr);
     // actually load it now
-    W=arma_mat_mmread(fn);
-    return(0);
+    if (arma_mat_mmread(fn,W))
+      return(1);
+    else
+      return(0);
   } else {
+    // file cannot be opened
     return(1);
   }
 }
@@ -78,7 +81,7 @@ void copy_mat_2_vec(mat &A, double *v) {
   }
 }
 
-sp_mat arma_sp_mat_mmread(char *fn) {
+int arma_sp_mat_mmread(char *fn, sp_mat &M) {
   /*
     load a matrix market sparse matrix into arma sp_mat
     
@@ -93,25 +96,25 @@ sp_mat arma_sp_mat_mmread(char *fn) {
 
     if ((f = fopen(fn, "r")) == NULL) {
       printf("Error opening file %s\n", fn);
-      exit(1);
+      return(1);
     }
 
     if (mm_read_banner(f, &matcode) != 0) {
       printf("Could not process Matrix Market banner.\n");
-      exit(1);
+      return(1);
     }
 
     if (!(mm_is_matrix(matcode)) || mm_is_dense(matcode)
         || mm_is_complex(matcode)) {
         printf("Sorry, this application does not support ");
         printf("Market Market type: [%s]\n", mm_typecode_to_str(matcode));
-        exit(1);
+        return(1);
     }
 
     /* find out size of sparse matrix .... */
     if ((ret_code = mm_read_mtx_crd_size(f, &m, &n, &nz)) !=0) {
       printf("Error reading matrix header\n");
-      exit(1);
+      return(1);
     }
 
     // initialize matrices for insertion into M
@@ -136,16 +139,17 @@ sp_mat arma_sp_mat_mmread(char *fn) {
     
     if (mm_is_symmetric(matcode)) {
       sp_mat Ml(locations,values,m,n);
-      sp_mat M=Ml+Ml.t();
+      M=Ml+Ml.t();
       M.diag() /= 2;
-      return M;
+      return(0);
     } else {
-      sp_mat M(locations,values,m,n);
-      return M;
+      sp_mat Minit(locations,values,m,n);
+      M=Minit;
+      return(0);
     }
 }
 
-mat arma_mat_mmread(char *fn) {
+int arma_mat_mmread(char *fn, mat &M) {
   /*
     load a matrix market matrix into arma mat
     
@@ -159,28 +163,28 @@ mat arma_mat_mmread(char *fn) {
 
     if ((f = fopen(fn, "r")) == NULL) {
       printf("Error opening file %s\n", fn);
-      exit(1);
+      return(1);
     }
 
     if (mm_read_banner(f, &matcode) != 0) {
       printf("Could not process Matrix Market banner.\n");
-      exit(1);
+      return(1);
     }
 
     if (!(mm_is_matrix(matcode)) || mm_is_sparse(matcode) || 
         mm_is_complex(matcode)) {
         printf("Sorry, this application does not support ");
         printf("Market Market type: [%s]\n", mm_typecode_to_str(matcode));
-        exit(1);
+        return(1);
     }
 
     /* find out size of matrix .... */
     if ((ret_code = mm_read_mtx_array_size(f, &m, &n)) !=0) {
       printf("Error reading matrix header\n");
-      exit(1);
+      return(1);
     }
 
-    mat M(m, n);        
+    M.set_size(m, n);        
 
     /* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
     /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
@@ -199,7 +203,7 @@ mat arma_mat_mmread(char *fn) {
       // M.diag() /= 2;
       M=symmatl(M);
     } 
-    return M;
+    return(0);
 }
 
 int arma_mat_mmwrite(char *fn, const mat &M) {
@@ -239,7 +243,8 @@ int arma_mat_mmwrite(char *fn, const mat &M) {
 
 int minimize_func(mat &W, const mat &X, const mat &Y, 
                   const sp_mat &Lx, const sp_mat &Ly, double lambda,
-                  int maxiter, double factr, double pgtol) {
+                  int maxiter, double factr, double pgtol, 
+                  int checkpt_iter, char *checkpt_file) {
   // Check dimensions
   uint nx=W.n_cols;
   uint ny=W.n_rows;
@@ -280,6 +285,8 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   
   // Run L-BFGS-B optimization
   /* Local variables */
+  int retcode; // code to return
+  int converged = 0;
   double *g;
   integer i;
   double *l,*u;
@@ -335,7 +342,7 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   /*     We start the iteration by initializing task. */
   *task = (integer)START;
   int iter=0;
-  while ((iter < maxiter) && !checkpoint) {
+  while ((iter < maxiter) && !checkpoint_and_exit) {
     setulb(&n, &m, x, l, u, nbd, &f, g, &factr, &pgtol, wa, iwa, task, 
            &iprint, csave, lsave, isave, dsave);
     if (IS_FG(*task)) {
@@ -360,23 +367,37 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
       break;
     } else if (IS_CONVERGED(*task)) {
       cout << "CONVERGED!" << endl;
+      converged=1;
       break;
     } else {
       cout << "Unknown status, task=" << *task << endl;
+    }
+    if ( (checkpt_file != NULL) && (checkpt_iter > 0) &&
+         ((iter % checkpt_iter) == 0) && (iter != 0) ) {
+      // checkpoint iterate
+      copy_vec_2_mat(x,W);
+      if (arma_mat_mmwrite(checkpt_file,W)) {
+        cout << "Error writing checkpoint file" << endl;
+        converged=0;
+        break;
+      }
     }
   }
   copy_vec_2_mat(x,W);
   // free arrays
   free(x); free(g); free(u); free(l); free(nbd); free(wa); free(iwa);
 
-  if (iter == maxiter) {
+  if (converged) {
+    retcode=0;
+  } else if (checkpoint_and_exit) {
+    cout << "Caught TERM signal, checkpointing then exiting" << endl;
+    retcode=1;
+  } else if (iter == maxiter) {
     cout << "Maximum number of iterations reached" << endl;
-    return(2);
-  } else if (checkpoint) {
-    cout << "Caught termination signal, checkpointing then exiting" << endl;
-    return(1);
-  } else {
-    return(0);
+    retcode=2;
+  } else if (!converged) {
+    retcode=3; // catchall for other errors
   }
+  return(retcode);
 }
 

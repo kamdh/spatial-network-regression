@@ -10,11 +10,15 @@ const string usage=
   "By default, use initial guess W0=Y*X^T*pinv(X*X^T) "
   "for iterative solver.\n\n";
 
-volatile sig_atomic_t checkpoint=0;
+const string header=
+  "Regularized connectome regression\n"
+  "=================================\n";
+
+volatile sig_atomic_t checkpoint_and_exit=0;
 
 void catch_signal(int sig) {
   // This variable indicates that we need to run a checkpoint
-  checkpoint=1;
+  checkpoint_and_exit=1;
 }
 
 int main(int argc, char** argv) {
@@ -50,38 +54,56 @@ int main(int argc, char** argv) {
     cout << usage;
     return(1);
   }
+  cout << header; 
   printf("Read lambda = %1.4e\n",lambda);
-  mat W;  // current iterate
+  // initialize
+  mat W, X, Y;
+  sp_mat Lx, Ly;
   printf("Reading X\n");
-  mat X=arma_mat_mmread(X_fn);
+  if (arma_mat_mmread(X_fn, X)) 
+    return(1);
   printf("Reading Y\n");
-  mat Y=arma_mat_mmread(Y_fn);
+  if (arma_mat_mmread(Y_fn, Y))
+    return(1);
   printf("Reading Lx\n");
-  sp_mat Lx=arma_sp_mat_mmread(Lx_fn);
+  if (arma_sp_mat_mmread(Lx_fn, Lx))
+    return(1);
   printf("Reading Ly\n");
-  sp_mat Ly=arma_sp_mat_mmread(Ly_fn);
+  if (arma_sp_mat_mmread(Ly_fn, Ly))
+    return(1);
+
+  // Checkpoint filename is outputfile.CHECKPT
+  char *checkpt_file;
+  if (asprintf(&checkpt_file,"%s.CHECKPT", outputfile) == -1) {
+    free(checkpt_file);
+    return(1);
+  }
+
   // Initialize W iterate
   printf("Initializing W0... ");
   if (argc==8) {
-    W=arma_mat_mmread(W_fn);
-    printf("successfully read W0.\n");
+    if (arma_mat_mmread(W_fn, W))
+      return(1);
+    else
+      printf("successfully read W0.\n");
   } else if (argc==7) {
     // First try and load any (possible) checkpoint
-    if (init_checkpoint(W, outputfile)) {
+    if (init_checkpoint(W, checkpt_file)) {
       // Checkpoint loading failed, initialize from start
-      printf("performing pseudinverse initialization... ");
-      init_W(W,X,Y);
+      printf("Performing pseudoinverse initialization... ");
+      init_pinv(W,X,Y);
       printf("done.\n");
     } else {
-      printf("successfully loaded checkpoint.\n");
+      printf("successfully loaded presumed checkpoint.\n");
     }
   }
 
   // register signal handler for checkpointing
-  signal(SIGTERM,catch_signal);
-  signal(SIGINT,catch_signal);
+  signal(SIGTERM,catch_signal); // sent by scheduler
+  signal(SIGINT,catch_signal);  // ^C
   
-  int code=minimize_func(W,X,Y,Lx,Ly,lambda,800,1e10,1e-5);
+  int code=minimize_func(W,X,Y,Lx,Ly,lambda,800,1e10,1e-5,
+                         20,checkpt_file);
   // while (code==2) {
   //   cout << "minimize_func returned 2, restarting" << endl;
   //   code=minimize_func(W,X,Y,Lx,Ly,lambda,300,1e10,1e-5);
@@ -91,10 +113,16 @@ int main(int argc, char** argv) {
     for (int n=0; n<argc; n++)
       cout << argv[n] << " ";
     cout << endl;
+    cout << "Received error code " << code << endl;
+    // save checkpoint file when not converged
+    if (arma_mat_mmwrite(checkpt_file,W))
+      return(1);
+  } else {
+    // only save final output if converged
+    if (arma_mat_mmwrite(outputfile,W))
+      return(1);
+    cout << "Saved in file: " << outputfile << endl;
   }
-  
-  if (arma_mat_mmwrite(outputfile,W))
-    return(1);
-  
+  free(checkpt_file);
   return(0);
 }
