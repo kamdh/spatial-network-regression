@@ -1,5 +1,7 @@
 #include "functions.hpp"
 
+volatile sig_atomic_t checkpoint_and_exit=0;
+
 int main(void) {
   arma_rng::set_seed(12588); // reproducibility
   // small defaults

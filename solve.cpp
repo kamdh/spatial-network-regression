@@ -7,8 +7,8 @@ const string usage=
   "Usage: solve [W0] X Y Lx Ly lambda W\n\n"
   "Solve the regularized regression problems:\n"
   "  min_W>0 ||W*X-Y||^2 + lambda*(ninj/nx)*||W*Lx + Ly*W||^2\n\n"
-  "By default, use initial guess W0=Y*X^T*pinv(X*X^T) "
-  "for iterative solver.\n\n";
+  "By default, try to load W.CHECKPT, otherwise "
+  "use initial guess W0=Y*X^T*pinv(X*X^T) for iterative solver.\n\n";
 
 const string header=
   "Regularized connectome regression\n"
@@ -22,6 +22,11 @@ void catch_signal(int sig) {
 }
 
 int main(int argc, char** argv) {
+  /*
+    returns 0 if converged,
+            1 if error,
+            2 if checkpointed.
+   */
   char *W_fn, *X_fn, *Y_fn, *Lx_fn, *Ly_fn, *outputfile;
   double lambda;
 
@@ -124,5 +129,8 @@ int main(int argc, char** argv) {
     cout << "Saved in file: " << outputfile << endl;
   }
   free(checkpt_file);
-  return(0);
+  if (code == 0)
+    return(0);
+  else
+    return(2);
 }

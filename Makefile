@@ -21,12 +21,16 @@ BLAS 	= $(LBFGSB_SRC)/miniCBLAS.c
 default:
 	$(CC) -o solve $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
 
-test:
+save_test:
 	$(CC) -o save_test -I $(INCLUDES) save_test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
+
+test:
 	$(CC) -o test -I $(INCLUDES) test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
+
+all: default save_test test
 
 profile:
 	$(CC) -o test -I $(INCLUDES) -pg test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS) -pg
 
 clean:
-	rm test solve
+	rm test solve save_test
