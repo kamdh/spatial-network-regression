@@ -9,6 +9,10 @@ regression. This solves the regularized regression problem:
 The code implements checkpointing and can making an initial guess
 by solving the unregularized problem.
 
+Requirements: 
+* mmio.c and mmio.h (http://math.nist.gov/MatrixMarket/mmio-c.html)
+* L-BFGS-B-C library (https://github.com/kharris/L-BFGS-B-C)
+
 Building: `make all`
 
 To run a test case, try running `test`. The final lines should be:
