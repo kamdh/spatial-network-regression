@@ -107,8 +107,8 @@ int main(int argc, char** argv) {
   signal(SIGTERM,catch_signal); // sent by scheduler
   signal(SIGINT,catch_signal);  // ^C
   
-  int code=minimize_func(W,X,Y,Lx,Ly,lambda,800,1e10,1e-5,
-                         20,checkpt_file);
+  int code=minimize_func(W,X,Y,Lx,Ly,lambda,600,1e10,1e-5,
+                         10,checkpt_file);
   // while (code==2) {
   //   cout << "minimize_func returned 2, restarting" << endl;
   //   code=minimize_func(W,X,Y,Lx,Ly,lambda,300,1e10,1e-5);
@@ -129,8 +129,5 @@ int main(int argc, char** argv) {
     cout << "Saved in file: " << outputfile << endl;
   }
   free(checkpt_file);
-  if (code == 0)
-    return(0);
-  else
-    return(2);
+  return(code);
 }
