@@ -19,6 +19,7 @@ using namespace arma;
 
 extern volatile sig_atomic_t checkpoint_and_exit;
 
+int init_unif(mat &W, const mat &X, const mat &Y);
 int init_pinv(mat &W, const mat &X, const mat &Y);
 int init_checkpoint(mat &W, char *fn);
 double loss(const mat &W, const mat &X, const mat &Y);

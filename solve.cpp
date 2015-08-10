@@ -95,16 +95,18 @@ int main(int argc, char** argv) {
     // First try and load any (possible) checkpoint
     if (init_checkpoint(W, checkpt_file)) {
       // Checkpoint loading failed, initialize from start
-      printf("Performing pseudoinverse initialization... ");
-      init_pinv(W,X,Y);
+      printf("Performing uniform initialization... ");
+      init_unif(W,X,Y);
+      //printf("Performing pseudoinverse initialization... ");
+      //init_pinv(W,X,Y);
       printf("done.\n");
     } else {
       printf("successfully loaded presumed checkpoint.\n");
     }
   }
-
+  
   // register signal handler for checkpointing
-  signal(SIGTERM,catch_signal); // sent by scheduler
+  // signal(SIGTERM,catch_signal); // sent by scheduler (disabled)
   signal(SIGINT,catch_signal);  // ^C
   
   int code=minimize_func(W,X,Y,Lx,Ly,lambda,600,1e10,1e-5,

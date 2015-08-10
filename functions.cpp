@@ -1,5 +1,10 @@
 #include "functions.hpp"
 
+int init_unif(mat &W, const mat &X, const mat &Y) {
+  W.zeros(Y.n_rows, X.n_rows);
+  return(0);
+}
+
 int init_pinv(mat &W, const mat &X, const mat &Y) {
   //W=Y*X.t()*pinv(X*X.t());
   double tol;
