@@ -15,6 +15,10 @@ Requirements:
 * L-BFGS-B-C library (https://github.com/kharris/L-BFGS-B-C)
 You will have to edit the Makefile to point to these libraries.
 
+Optional requirements:
+* optimized BLAS (MKL, OpenBLAS, etc.). This will require editing the Makefile
+to point to your installed libraries.
+
 Building: `make all`
 
 To run a test case, try running `test`. The final lines should be:
