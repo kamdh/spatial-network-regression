@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
   // signal(SIGTERM,catch_signal); // sent by scheduler (disabled)
   signal(SIGINT,catch_signal);  // ^C
   
-  int code=minimize_func(W,X,Y,Lx,Ly,lambda,600,1e10,1e-5,
+  int code=minimize_func(W,X,Y,Lx,Ly,lambda,4,600,2.0e10,1.0e-5,
                          10,checkpt_file);
   // while (code==2) {
   //   cout << "minimize_func returned 2, restarting" << endl;

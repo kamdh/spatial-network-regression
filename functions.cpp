@@ -2,6 +2,7 @@
 
 int init_unif(mat &W, const mat &X, const mat &Y) {
   W.zeros(Y.n_rows, X.n_rows);
+  //W.ones(Y.n_rows, X.n_rows);
   return(0);
 }
 
@@ -248,7 +249,8 @@ int arma_mat_mmwrite(char *fn, const mat &M) {
 
 int minimize_func(mat &W, const mat &X, const mat &Y, 
                   const sp_mat &Lx, const sp_mat &Ly, double lambda,
-                  int maxiter, double factr, double pgtol, 
+                  integer m,
+                  int maxiter, double factr, double pgtol,
                   int checkpt_iter, char *checkpt_file) {
   // Check dimensions
   uint nx=W.n_cols;
@@ -283,10 +285,10 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   // Initial test
   double f;
   mat gmat(ny,nx);
-  f=cost(W,X,Y,Lx,Ly,lambda);
-  cout << "initial cost: " << f << endl;
-  gradient(gmat,W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
-  cout << "initial gradient norm: " << norm(gmat,"fro") << endl;
+  // f=cost(W,X,Y,Lx,Ly,lambda);
+  // cout << "initial cost: " << f << endl;
+  // gradient(gmat,W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
+  // cout << "initial gradient norm: " << norm(gmat,"inf") << endl;
   
   // Run L-BFGS-B optimization
   /* Local variables */
@@ -295,7 +297,7 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   double *g;
   integer i;
   double *l,*u;
-  integer m, n;
+  integer n;
   double *x;
   //double t1, t2;
   double *wa;
@@ -321,7 +323,7 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
   /*     m of limited memory corrections stored.  (n and m should not */
   /*     exceed the limits nmax and mmax respectively.) */
   n = nx*ny;
-  m = 5;
+  //m = 5;
   // allocate vectors
   x=(double *) malloc(n*sizeof(double));
   g=(double *) malloc(n*sizeof(double));

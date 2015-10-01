@@ -39,6 +39,7 @@ int test_problem(void);
 int test_copy(void);
 int minimize_func(mat &W, const mat &X, const mat &Y, 
                   const sp_mat &Lx, const sp_mat &Ly, double lambda,
+                  integer m,
                   int maxiter=200, double factr=1e7, double pgtol=1e-5,
                   int checkpt_iter=0, char *checkpt_file=NULL);
 

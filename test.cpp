@@ -43,7 +43,7 @@ int main(void) {
   
   //cout << "W0:\n" << W << endl;
 
-  if (minimize_func(W,X,Y,Lx,Ly,lambda,200,1e10,1e-5) != 0) 
+  if (minimize_func(W,X,Y,Lx,Ly,lambda,5,200,1e10,1e-5) != 0) 
     return(1);
 
   //cout << "W final:\n" << W << endl;
