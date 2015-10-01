@@ -17,7 +17,8 @@ You will have to edit the Makefile to point to these libraries.
 
 Optional requirements:
 * optimized BLAS (MKL, OpenBLAS, etc.). This will require editing the Makefile
-to point to your installed libraries.
+to point to your installed libraries. An example with this structure is in
+`Makefile.hyak`.
 
 Building: `make all`
 

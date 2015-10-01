@@ -5,6 +5,8 @@ CFLAGS = -O3 -Wall -Wno-uninitialized -fpic -lm -larmadillo
 #CFLAGS = -Wall -Wno-uninitialized -lm -larmadillo -g
 LBFGSB_SRC = ../L-BFGS-B-C/src
 MMIO_SRC = ../mmio
+#BLAS_DIR = /usr/lib/openblas-base
+#export LD_LIBRARY_PATH += $(BLAS_DIR)
 
 INCLUDES = -I/usr/include -I. -I$(LBFGSB_SRC) -I$(MMIO_SRC)
 INCLUDES += -I$(HOME)/.local/usr/local/include
@@ -15,8 +17,8 @@ LBFGSB=$(LBFGSB_SRC)/lbfgsb.c $(LBFGSB_SRC)/linesearch.c $(LBFGSB_SRC)/subalgori
 MMIO=$(MMIO_SRC)/libmmio.a
 LINPACK = $(LBFGSB_SRC)/linpack.c
 TIMER   = $(LBFGSB_SRC)/timer.c
-#BLAS 	= $(LBFGSB_SRC)/miniCBLAS.c
-BLAS = -lblas -lgfortran -llapack
+BLAS 	= $(LBFGSB_SRC)/miniCBLAS.c
+#BLAS = -D_USE_OPTIMIZED_BLAS -lcblas -lgfortran -llapack
 
 default:
 	$(CC) -o solve $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
