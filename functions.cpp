@@ -38,9 +38,27 @@ int init_checkpoint(mat &W, char *fn) {
   }
 }
 
-double loss(const mat &W, const mat &X, const mat &Y) {
+mat P_Omega(const mat &A, const sp_mat &Omega) {
+  mat PA = A;
+  sp_mat::const_iterator start = Omega.begin();
+  sp_mat::const_iterator end   = Omega.end();
+  
+  for(sp_mat::const_iterator it = start; it != end; ++it) {
+    // cout << "location: " << it.row() << "," << it.col() << "  ";
+    // cout << "value: " << (*it) << endl;
+    PA(it.row(),it.col()) = 0.0;
+  }
+  //  PA.elem( Omega.find() ).zeros();
+  return(PA);
+}
+
+double loss(const mat &W, const mat &X, const mat &Y, const sp_mat &Omega) {
   /* || Y - W*X ||_F^2  */
-  return pow(norm(Y-W*X,"fro"),2);
+  if ( !Omega.is_empty() ) {
+    return pow(norm(P_Omega(Y-W*X,Omega),"fro"),2);
+  } else {
+    return pow(norm(Y-W*X,"fro"),2);
+  }
 }
 
 double regularizer(const mat &W, const sp_mat &Lx, const sp_mat &Ly) {
@@ -49,20 +67,28 @@ double regularizer(const mat &W, const sp_mat &Lx, const sp_mat &Ly) {
 }
 
 double cost(const mat &W, const mat &X, const mat &Y,
-            const sp_mat &Lx, const sp_mat &Ly, double lambda) {
+            const sp_mat &Lx, const sp_mat &Ly, 
+            const sp_mat &Omega, double lambda) {
   /* Returns the cost of the current parameters */
   double cost1, cost2;
-  cost1 = loss(W,X,Y);
+  cost1 = loss(W,X,Y,Omega);
   cost2 = regularizer(W,Lx,Ly);
   return cost1+lambda*cost2;
 }
 
 void gradient(mat &g,
-              const mat &W, const sp_mat &Lx, const sp_mat &Ly, double lambda,
+              const mat &W, const mat &X, const mat &Y,
+              const sp_mat &Lx, const sp_mat &Ly, 
+              const sp_mat &Omega,
+              double lambda,
               const mat &YXT, const mat &XXT, 
               const sp_mat &LxLxT, const sp_mat &LyLyT) {
   /* Computes the gradient g, which is modified in-place */
-  g=-2*YXT + 2*W*XXT + 2*lambda*(2*Ly*W*Lx + W*LxLxT + LyLyT*W);
+  if ( !Omega.is_empty() ) {
+    g=2*P_Omega(W*X-Y,Omega)*X.t() + 2*lambda*(2*Ly*W*Lx + W*LxLxT + LyLyT*W);
+  } else {
+    g=-2*YXT + 2*W*XXT + 2*lambda*(2*Ly*W*Lx + W*LxLxT + LyLyT*W);
+  }
 }
 
 void copy_vec_2_mat(double *v, mat &A) {
@@ -248,7 +274,9 @@ int arma_mat_mmwrite(char *fn, const mat &M) {
 }
 
 int minimize_func(mat &W, const mat &X, const mat &Y, 
-                  const sp_mat &Lx, const sp_mat &Ly, double lambda,
+                  const sp_mat &Lx, const sp_mat &Ly, 
+                  const sp_mat &Omega,
+                  double lambda,
                   integer m,
                   int maxiter, double factr, double pgtol,
                   int checkpt_iter, char *checkpt_file) {
@@ -268,13 +296,17 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
     printf("Matrix dimension ninj inconsistent\n");
     return(1);
   }
+  if ( !Omega.is_empty() && ((ny != Omega.n_rows) || (ninj != Omega.n_cols)) ) {
+    printf("Dimensions of Omega inconsistent\n");
+    return(1);
+  }
   if (lambda <= 0.0) {
     printf("lambda should be > 0\n");
     return(1);
   }
   // Scale lambda
   lambda=lambda*double(ninj)/double(nx);
-
+  
   // Do a few computations to setup matrix products for gradient
   mat YXT,XXT;
   sp_mat LxLxT,LyLyT;
@@ -355,8 +387,8 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
     if (IS_FG(*task)) {
       // update cost and gradient
       copy_vec_2_mat(x,W);
-      f=cost(W,X,Y,Lx,Ly,lambda);
-      gradient(gmat,W,Lx,Ly,lambda,YXT,XXT,LxLxT,LyLyT);
+      f=cost(W,X,Y,Lx,Ly,Omega,lambda);
+      gradient(gmat,W,X,Y,Lx,Ly,Omega,lambda,YXT,XXT,LxLxT,LyLyT);
       copy_mat_2_vec(gmat,g);
     } else if (*task==NEW_X) {
       // new iterate

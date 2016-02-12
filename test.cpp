@@ -16,6 +16,7 @@ int main(void) {
   mat X=randu<mat>(nx,ninj);
   mat Y=randu<mat>(ny,ninj);
   mat W=randn<mat>(ny,nx);
+  sp_mat Omega(ny,ninj);
   sp_mat Lx(nx,nx);
   sp_mat Ly(ny,ny);
   //double alpha=0.1;
@@ -43,7 +44,7 @@ int main(void) {
   
   //cout << "W0:\n" << W << endl;
 
-  if (minimize_func(W,X,Y,Lx,Ly,lambda,5,200,1e10,1e-5) != 0) 
+  if (minimize_func(W,X,Y,Lx,Ly,Omega,lambda,5,200,1e10,1e-5) != 0) 
     return(1);
 
   //cout << "W final:\n" << W << endl;
