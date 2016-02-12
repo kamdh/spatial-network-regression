@@ -6,6 +6,12 @@ regression. This solves the regularized regression problem:
 
 ```min_W>0 ||W*X-Y||^2 + lambda*(ninj/nx)*||W*Lx + Ly*W||^2```
 
+or, if Omega is given, solve:
+
+```min_W>0 ||P(W*X-Y)||^2 + lambda*(ninj/nx)*||W*Lx + Ly*W||^2```,
+
+where P=P_Omega^c is the projection onto the complement of Omega.
+
 The code implements checkpointing and can making an initial guess
 by solving the unregularized problem.
 
