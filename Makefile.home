@@ -1,6 +1,6 @@
 CC = g++
 
-CFLAGS = -O3 -Wall -Wno-uninitialized -fpic -lm -larmadillo
+CFLAGS = -O3 -Wall -Wno-uninitialized -fpic -lm -larmadillo -lhdf5_cpp
 #CFLAGS += -static-libstdc++
 #CFLAGS = -Wall -Wno-uninitialized -lm -larmadillo -g
 LBFGSB_SRC = ../L-BFGS-B-C/src
@@ -28,6 +28,11 @@ save_test:
 
 test:
 	$(CC) -o test -I $(INCLUDES) test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
+	test_save_mat
+
+test_save_mat:
+	$(CC) -o test_save_mat -I $(INCLUDES) test_save_mat.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
+
 
 all: default save_test test
 

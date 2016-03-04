@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
   signal(SIGINT,catch_signal);  // ^C
   
   // low tolerance:
-  int code=minimize_func(W,X,Y,Lx,Ly,Omega,lambda,4,600,2.0e10,1.0e-5,
+  int code=minimize_func(W,X,Y,Lx,Ly,Omega,lambda,6,600,2.0e10,1.0e-5,
                          10,checkpt_file);
   // high tolerance, easy problems:
   // int code=minimize_func(W,X,Y,Lx,Ly,Omega,lambda,12,2000,1e10,1.0e-5,
@@ -154,11 +154,11 @@ int main(int argc, char** argv) {
     cout << endl;
     cout << "Received error code " << code << endl;
     // save checkpoint file when not converged
-    if (arma_mat_mmwrite(checkpt_file,W))
+    if !(W.save(outputfile, hdf5_binary))
       return(1);
   } else {
     // only save final output if converged
-    if (arma_mat_mmwrite(outputfile,W))
+    if !(W.save(outputfile, hdf5_binary))
       return(1);
     cout << "Saved in file: " << outputfile << endl;
   }
