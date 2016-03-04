@@ -154,11 +154,11 @@ int main(int argc, char** argv) {
     cout << endl;
     cout << "Received error code " << code << endl;
     // save checkpoint file when not converged
-    if !(W.save(outputfile, hdf5_binary))
+    if (!W.save(outputfile, hdf5_binary))
       return(1);
   } else {
     // only save final output if converged
-    if !(W.save(outputfile, hdf5_binary))
+    if (!W.save(outputfile, hdf5_binary))
       return(1);
     cout << "Saved in file: " << outputfile << endl;
   }

@@ -1,6 +1,6 @@
 CC = g++
 
-CFLAGS = -O3 -Wall -Wno-uninitialized -fpic -lm -larmadillo -lhdf5_cpp
+CFLAGS = -O3 -Wall -Wno-uninitialized -fpic -lm -larmadillo -lhdf5
 #CFLAGS += -static-libstdc++
 #CFLAGS = -Wall -Wno-uninitialized -lm -larmadillo -g
 LBFGSB_SRC = ../L-BFGS-B-C/src
