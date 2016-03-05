@@ -30,7 +30,7 @@ TIMER   = $(LBFGSB_SRC)/timer.c
 BLAS = -D_USE_OPTIMIZED_BLAS -lmkl_rt -lgfortran
 
 default:
-	$(CXX) -o solve $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) $(LDLIBS)
+	$(CXX) -o solve -I $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) $(LDLIBS)
 
 save_test:
 	$(CXX) -o save_test -I $(INCLUDES) save_test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) $(LDLIBS)

@@ -23,12 +23,12 @@ int init_pinv(mat &W, const mat &X, const mat &Y) {
   return(0);
 }
 
-int init_checkpoint(mat &W, char *fn) {
+int init_checkpoint(mat &W, const char *fn) {
   FILE* fptr = fopen(fn, "r");
   if (fptr != NULL) {
     fclose(fptr);
     // actually load it now
-    if (arma_mat_mmread(fn,W))
+    if (load_matrix(fn,W))
       return(1);
     else
       return(0);
@@ -113,7 +113,20 @@ void copy_mat_2_vec(mat &A, double *v) {
   }
 }
 
-int arma_sp_mat_mmread(char *fn, sp_mat &M) {
+int load_matrix(const char *fn, mat &M) {
+  // first try arma built-in load
+  if (!M.load(fn)) {
+    // second try mmread
+    if (arma_mat_mmread(fn, M)) {
+      // both failed
+      return(1);
+    }
+  }
+  // one succeeded
+  return(0);
+}
+
+int arma_sp_mat_mmread(const char *fn, sp_mat &M) {
   /*
     load a matrix market sparse matrix into arma sp_mat
     
@@ -181,7 +194,7 @@ int arma_sp_mat_mmread(char *fn, sp_mat &M) {
     }
 }
 
-int arma_mat_mmread(char *fn, mat &M) {
+int arma_mat_mmread(const char *fn, mat &M) {
   /*
     load a matrix market matrix into arma mat
     
@@ -238,7 +251,7 @@ int arma_mat_mmread(char *fn, mat &M) {
     return(0);
 }
 
-int arma_mat_mmwrite(char *fn, const mat &M) {
+int arma_mat_mmwrite(const char *fn, const mat &M) {
   /*
     save an arma mat in matrix market format
     

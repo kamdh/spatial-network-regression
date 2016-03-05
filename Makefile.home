@@ -1,43 +1,44 @@
-CC = g++
+CXX = g++
 
-CFLAGS = -O3 -Wall -Wno-uninitialized -fpic -lm -larmadillo -lhdf5
-#CFLAGS += -static-libstdc++
-#CFLAGS = -Wall -Wno-uninitialized -lm -larmadillo -g
+CXXFLAGS = -O3 -Wall -Wno-uninitialized -fpic
+ARMADILLO_DIR = $(HOME)/.local/usr/lib
+ARMADILLO = -L$(ARMADILLO_DIR) -larmadillo -Wl,-rpath=$(ARMADILLO_DIR) -DARMA_USE_HDF5
+LDLIBS = -lm -lpthread -lrt -lz -ldl -lm $(ARMADILLO)
 LBFGSB_SRC = ../L-BFGS-B-C/src
 MMIO_SRC = ../mmio
 #BLAS_DIR = /usr/lib/openblas-base
 #export LD_LIBRARY_PATH += $(BLAS_DIR)
+#LIBSHDF = -L$(HOME)/.local/usr/lib/ $(HOME)/.local/usr/lib/
+LIBSHDF = -L$(HOME)/local/anaconda/lib/ -lhdf5 -Wl,-rpath=$(HOME)/local/anaconda/lib/ 
 
-INCLUDES = -I/usr/include -I. -I$(LBFGSB_SRC) -I$(MMIO_SRC)
-INCLUDES += -I$(HOME)/.local/usr/local/include
-ARMADILLO = -L$(HOME)/.local/usr/local/lib64
-#CFLAGS += $(INCLUDES)
+INCLUDES = -I$(HOME)/.local/usr/local/include  -I$(HOME)/local/anaconda/include/ -I/usr/include -I. -I$(LBFGSB_SRC) -I$(MMIO_SRC) 
+INCLUDES += $(CPPFLAGS)
+LDLIBS += $(ARMADILLO)
+
 
 LBFGSB=$(LBFGSB_SRC)/lbfgsb.c $(LBFGSB_SRC)/linesearch.c $(LBFGSB_SRC)/subalgorithms.c $(LBFGSB_SRC)/print.c
 MMIO=$(MMIO_SRC)/libmmio.a
 LINPACK = $(LBFGSB_SRC)/linpack.c
 TIMER   = $(LBFGSB_SRC)/timer.c
 BLAS 	= $(LBFGSB_SRC)/miniCBLAS.c
-#BLAS = -D_USE_OPTIMIZED_BLAS -lcblas -lgfortran -llapack
+#BLAS += -D_USE_OPTIMIZED_BLAS -lblas
 
 default:
-	$(CC) -o solve $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
+	$(CXX) -o solve -I $(INCLUDES) solve.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) $(LDLIBS)
 
 save_test:
-	$(CC) -o save_test -I $(INCLUDES) save_test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
+	$(CXX) -o save_test -I $(INCLUDES) save_test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) $(LDLIBS)
 
 test:
-	$(CC) -o test -I $(INCLUDES) test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
-	test_save_mat
+	$(CXX) -o test -I $(INCLUDES) test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CXXFLAGS) $(LIBSHDF) $(LDLIBS)
 
 test_save_mat:
-	$(CC) -o test_save_mat -I $(INCLUDES) test_save_mat.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS)
-
+	$(CXX) -o test_save_mat -I $(INCLUDES) test_save_mat.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) $(LDLIBS)
 
 all: default save_test test
 
 profile:
-	$(CC) -o test -I $(INCLUDES) -pg test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(CFLAGS) -pg
+	$(CXX) -o test -I $(INCLUDES) -pg test.cpp functions.cpp $(LBFGSB) $(MMIO) $(LINPACK) $(BLAS) $(TIMER) $(LIBSHDF) $(CXXFLAGS) -pg $(LDLIBS)
 
 clean:
-	rm test solve save_test
+	rm test solve save_test test_save_mat

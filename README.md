@@ -16,7 +16,9 @@ The code implements checkpointing and can making an initial guess
 by solving the unregularized problem.
 
 Requirements: 
-* Armadillo C++ linear algebra library (http://arma.sourceforge.net)
+* HDF5
+* Armadillo C++ linear algebra library linked to HDF5  
+(http://arma.sourceforge.net)
 * mmio.c and mmio.h (http://math.nist.gov/MatrixMarket/mmio-c.html)
 * L-BFGS-B-C library (https://github.com/kharris/L-BFGS-B-C)
 You will have to edit the Makefile to point to these libraries.

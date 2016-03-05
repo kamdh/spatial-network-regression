@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   sp_mat Omega(Y.n_rows,Y.n_cols);
   printf("Initializing W0... ");
   if (argc==8) {
-    if (arma_mat_mmread(W_fn, W))
+    if (load_matrix(W_fn,W))
       return(1);
     else
       printf("successfully read W0.\n");
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
       printf("successfully loaded presumed checkpoint.\n");
     }
   } else if (argc==9) {
-    if (arma_mat_mmread(W_fn, W))
+    if (load_matrix(W_fn,W))
       return(1);
     else
       printf("successfully read W0.\n");
