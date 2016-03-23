@@ -4,15 +4,16 @@
 #include <csignal>
 
 const string usage=
-  "Usage: solve [[W0] Omega] X Y Lx Ly lambda W\n\n"
+  "Usage: solve [W0 [Omega]] X Y Lx Ly lambda W\n\n"
   "Solve the regularized regression problems:\n"
   "  min_W>0 ||W*X-Y||^2 + lambda*(ninj/nx)*||W*Lx + Ly*W||^2\n"
   "or, if Omega is given, solve:\n"
   "  min_W>0 ||P(W*X-Y)||^2 + lambda*(ninj/nx)*||W*Lx + Ly*W||^2\n"
   "where P=P_Omega^c is the projection onto the complement of Omega.\n\n"
   "By default, try to load W.CHECKPT, otherwise "
-  "use initial guess W0=Y*X^T*pinv(X*X^T) or supplied W0 "
-  "for iterative solver.\n\n";
+  "use initial guess W0 all zeros or supplied W0 "
+  "for iterative solver "
+  "(W0 can be --W0_init to initialize).\n\n";
 
 const string header=
   "Regularized connectome regression\n"
@@ -82,16 +83,18 @@ int main(int argc, char** argv) {
   mat W, X, Y;
   sp_mat Lx, Ly;
   printf("Reading X\n");
-  if (arma_mat_mmread(X_fn, X)) 
+  if (load_matrix(X_fn, X))
     return(1);
+  cout << "X.n_rows = " << X.n_rows << endl;
+  cout << "X.n_cols = " << X.n_cols << endl;
   printf("Reading Y\n");
-  if (arma_mat_mmread(Y_fn, Y))
+  if (load_matrix(Y_fn, Y))
     return(1);
   printf("Reading Lx\n");
-  if (arma_sp_mat_mmread(Lx_fn, Lx))
+  if (load_sparse_matrix(Lx_fn, Lx))
     return(1);
   printf("Reading Ly\n");
-  if (arma_sp_mat_mmread(Ly_fn, Ly))
+  if (load_sparse_matrix(Ly_fn, Ly))
     return(1);
 
   // Checkpoint filename is outputfile.CHECKPT
@@ -104,33 +107,32 @@ int main(int argc, char** argv) {
   // Initialize W iterate and Omega
   sp_mat Omega(Y.n_rows,Y.n_cols);
   printf("Initializing W0... ");
-  if (argc==8) {
-    if (load_matrix(W_fn,W))
-      return(1);
-    else
-      printf("successfully read W0.\n");
-  } else if (argc==7) {
-    // First try and load any (possible) checkpoint
-    if (init_checkpoint(W, checkpt_file)) {
+  if (init_checkpoint(W,checkpt_file)) {
+    if ( (argc==7) || (strcmp(W_fn,"--W0_init") == 0) ) {
       // Checkpoint loading failed, initialize from start
-      printf("Performing uniform initialization... ");
+      printf("performing uniform initialization... ");
       init_unif(W,X,Y);
       //printf("Performing pseudoinverse initialization... ");
       //init_pinv(W,X,Y);
       printf("done.\n");
-    } else {
-      printf("successfully loaded presumed checkpoint.\n");
+    } else if (argc==8) {
+      if (load_matrix(W_fn,W))
+        return(1);
+      else
+        printf("successfully read W0.\n");
+    } else if (argc==9) {
+      if (load_matrix(W_fn,W))
+        return(1);
+      else
+        printf("successfully read W0.\n");
+      printf("Loading Omega... ");
+      if (load_sparse_matrix(Omega_fn, Omega))
+        return(1);
+      else
+        printf("successfully read Omega.\n");
     }
-  } else if (argc==9) {
-    if (load_matrix(W_fn,W))
-      return(1);
-    else
-      printf("successfully read W0.\n");
-    printf("Loading Omega... ");
-    if (arma_sp_mat_mmread(Omega_fn, Omega))
-      return(1);
-    else
-      printf("successfully read Omega.\n");
+  } else {
+    printf("successfully loaded presumed checkpoint.\n");
   }
   
   // register signal handler for checkpointing
@@ -154,11 +156,12 @@ int main(int argc, char** argv) {
     cout << endl;
     cout << "Received error code " << code << endl;
     // save checkpoint file when not converged
-    if (!W.save(outputfile, hdf5_binary))
+    if (!save_matrix(checkpt_file,W))
       return(1);
   } else {
     // only save final output if converged
-    if (!W.save(outputfile, hdf5_binary))
+    inplace_trans(W);
+    if (!save_matrix(outputfile, W))
       return(1);
     cout << "Saved in file: " << outputfile << endl;
   }

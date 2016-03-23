@@ -36,6 +36,8 @@ void gradient(mat &g, const mat &W, const mat &X, const mat &Y,
 void copy_vec_2_mat(double *v, mat &A);
 void copy_mat_2_vec(const mat &A, double *v);
 int load_matrix(const char *fn, mat &M);
+int load_sparse_matrix(const char *fn, sp_mat &M);
+int save_matrix(const char *fn, const mat &M);
 int arma_sp_mat_mmread(const char *fn, sp_mat &M);
 int arma_mat_mmread(const char *fn, mat &M);
 int arma_mat_mmwrite(const char *fn, const mat &M);

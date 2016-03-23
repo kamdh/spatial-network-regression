@@ -118,12 +118,31 @@ int load_matrix(const char *fn, mat &M) {
   if (!M.load(fn)) {
     // second try mmread
     if (arma_mat_mmread(fn, M)) {
-      // both failed
+      // all failed
       return(1);
     }
+  } else {
+    // M.load returns transpose
+    inplace_trans(M);
   }
   // one succeeded
   return(0);
+}
+
+int load_sparse_matrix(const char *fn, sp_mat &M) {
+  // // first try arma built-in load
+  // if (!M.load(fn)) {
+  //   // if failed, try sparse version
+  if (arma_sp_mat_mmread(fn,M)) {
+    return(1);
+  }
+  // one succeeded
+  return(0);
+}
+
+int save_matrix(const char *fn, const mat &M) {
+  mat Mt = M.t();
+  return(Mt.save(fn, hdf5_binary));
 }
 
 int arma_sp_mat_mmread(const char *fn, sp_mat &M) {
@@ -428,7 +447,7 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
          ((iter % checkpt_iter) == 0) && (iter != 0) ) {
       // checkpoint iterate
       copy_vec_2_mat(x,W);
-      if (arma_mat_mmwrite(checkpt_file,W)) {
+      if ( !save_matrix(checkpt_file, W) ) {
         cout << "Error writing checkpoint file" << endl;
         converged=0;
         break;
