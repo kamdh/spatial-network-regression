@@ -115,24 +115,22 @@ void copy_mat_2_vec(mat &A, double *v) {
 
 int load_matrix(const char *fn, mat &M) {
   // first try arma built-in load
-  if (!M.load(fn)) {
+  if (M.load(fn)) {
+    // M.load returns transpose
+    inplace_trans(M);
+  } else {
     // second try mmread
     if (arma_mat_mmread(fn, M)) {
       // all failed
       return(1);
     }
-  } else {
-    // M.load returns transpose
-    inplace_trans(M);
   }
   // one succeeded
   return(0);
 }
 
 int load_sparse_matrix(const char *fn, sp_mat &M) {
-  // // first try arma built-in load
-  // if (!M.load(fn)) {
-  //   // if failed, try sparse version
+  // only works with MatrixMarket format
   if (arma_sp_mat_mmread(fn,M)) {
     return(1);
   }
