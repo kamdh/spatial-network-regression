@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
     return(1);
   }
   cout << header; 
+  printf("Got %d arguments\n", argc);
   printf("Read lambda = %1.4e\n",lambda);
   // initialize
   mat W, X, Y;
@@ -104,9 +105,9 @@ int main(int argc, char** argv) {
     return(1);
   }
 
-  // Initialize W iterate and Omega
-  sp_mat Omega(Y.n_rows,Y.n_cols);
+  // Initialize W
   printf("Initializing W0... ");
+  // Always try checkpoint first
   if (init_checkpoint(W,checkpt_file)) {
     if ( (argc==7) || (strcmp(W_fn,"--W0_init") == 0) ) {
       // Checkpoint loading failed, initialize from start
@@ -125,15 +126,20 @@ int main(int argc, char** argv) {
         return(1);
       else
         printf("successfully read W0.\n");
-      printf("Loading Omega... ");
-      if (load_sparse_matrix(Omega_fn, Omega))
-        return(1);
-      else
-        printf("successfully read Omega.\n");
     }
   } else {
     printf("successfully loaded presumed checkpoint.\n");
   }
+  // Load Omega
+  sp_mat Omega(Y.n_rows,Y.n_cols);
+  if (argc == 9) {
+    printf("Loading Omega... ");
+    if (load_sparse_matrix(Omega_fn, Omega))
+      return(1);
+    else
+      printf("successfully read Omega.\n");
+  }
+
   
   // register signal handler for checkpointing
   // signal(SIGTERM,catch_signal); // sent by scheduler (disabled)
