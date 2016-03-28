@@ -115,7 +115,7 @@ void copy_mat_2_vec(mat &A, double *v) {
 
 int load_matrix(const char *fn, mat &M) {
   // first try arma built-in load
-  if (M.load(fn)) {
+  if (M.load(fn), hdf5_binary) {
     // M.load returns transpose
     inplace_trans(M);
   } else {
@@ -140,7 +140,7 @@ int load_sparse_matrix(const char *fn, sp_mat &M) {
 
 int save_matrix(const char *fn, const mat &M) {
   mat Mt = M.t();
-  return(Mt.save(fn, hdf5_binary));
+  return( (int) Mt.save(fn, hdf5_binary) );
 }
 
 int arma_sp_mat_mmread(const char *fn, sp_mat &M) {
