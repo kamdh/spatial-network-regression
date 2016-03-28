@@ -115,7 +115,7 @@ void copy_mat_2_vec(mat &A, double *v) {
 
 int load_matrix(const char *fn, mat &M) {
   // first try arma built-in load
-  if (M.load(fn), hdf5_binary) {
+  if (M.load(fn, hdf5_binary)) {
     // M.load returns transpose
     inplace_trans(M);
   } else {

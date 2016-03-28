@@ -169,6 +169,7 @@ int main(int argc, char** argv) {
     if (!save_matrix(outputfile, W))
       return(1);
     cout << "Saved in file: " << outputfile << endl;
+    remove(checkpt_file);
   }
   free(checkpt_file);
   return(code);
