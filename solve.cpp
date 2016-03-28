@@ -166,7 +166,6 @@ int main(int argc, char** argv) {
       return(1);
   } else {
     // only save final output if converged
-    inplace_trans(W);
     if (!save_matrix(outputfile, W))
       return(1);
     cout << "Saved in file: " << outputfile << endl;
