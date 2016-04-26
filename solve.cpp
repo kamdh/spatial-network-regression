@@ -107,28 +107,28 @@ int main(int argc, char** argv) {
 
   // Initialize W
   printf("Initializing W0... ");
-  // Always try checkpoint first
+  // Now try checkpoint first
   if (init_checkpoint(W,checkpt_file)) {
-    if ( (argc==7) || (strcmp(W_fn,"--W0_init") == 0) ) {
-      // Checkpoint loading failed, initialize from start
-      printf("performing uniform initialization... ");
-      init_unif(W,X,Y);
-      //printf("Performing pseudoinverse initialization... ");
-      //init_pinv(W,X,Y);
-      printf("done.\n");
-    } else if (argc==8) {
-      if (load_matrix(W_fn,W))
-        return(1);
-      else
-        printf("successfully read W0.\n");
-    } else if (argc==9) {
-      if (load_matrix(W_fn,W))
-        return(1);
-      else
-        printf("successfully read W0.\n");
+    // Try final file
+    if (init_checkpoint(W,outputfile)) {
+      if ( (argc==7) || (strcmp(W_fn,"--W0_init") == 0) ) {
+        // Checkpoint loading failed, initialize from start
+        printf("performing uniform initialization... ");
+        init_unif(W,X,Y);
+        //printf("Performing pseudoinverse initialization... ");
+        //init_pinv(W,X,Y);
+        printf("done.\n");
+      } else if ((argc==8) || (argc==9)) {
+        if (load_matrix(W_fn,W))
+          return(1);
+        else
+          printf("successfully read W0.\n");
+      }
+    } else {
+      printf("successfully loaded final file as checkpoint.\n");
     }
   } else {
-    printf("successfully loaded presumed checkpoint.\n");
+      printf("successfully loaded presumed checkpoint.\n");
   }
   // Load Omega
   sp_mat Omega(Y.n_rows,Y.n_cols);
