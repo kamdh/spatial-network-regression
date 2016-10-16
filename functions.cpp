@@ -330,7 +330,7 @@ int minimize_func(mat &W, const mat &X, const mat &Y,
     printf("Dimensions of Omega inconsistent\n");
     return(1);
   }
-  if (lambda <= 0.0) {
+  if (lambda < 0.0) {
     printf("lambda should be > 0\n");
     return(1);
   }
